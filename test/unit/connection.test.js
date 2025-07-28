@@ -30,7 +30,7 @@ class MockSocket extends EventEmitter {
 test('Connection: should emit message on text frame', async () => {
   const socket = new MockSocket();
   const conn = new Connection(socket, 'key', Buffer.alloc(0), {});
-  conn.listen();
+  conn.init();
 
   await new Promise((resolve) => {
     conn.on('message', (msg, isBinary) => {
@@ -47,7 +47,7 @@ test('Connection: should emit message on text frame', async () => {
 test('Connection: should send pong when ping received', () => {
   const socket = new MockSocket();
   const conn = new Connection(socket, 'key', Buffer.alloc(0), {});
-  conn.listen();
+  conn.init();
 
   socket.emit('data', Frame.ping().toBuffer());
 
@@ -60,7 +60,7 @@ test('Connection: should send pong when ping received', () => {
 test('Connection: should close on close frame', () => {
   const socket = new MockSocket();
   const conn = new Connection(socket, 'key', Buffer.alloc(0), {});
-  conn.listen();
+  conn.init();
 
   return new Promise((resolve) => {
     conn.on('close', () => {
