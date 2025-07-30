@@ -10,7 +10,7 @@
     "fix": "eslint . --fix && prettier --write \"**/*.js\" \"**/*.json\" \"**/*.md\" \"**/*.ts\""
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=18"
   },
   "repository": {
     "type": "git",
