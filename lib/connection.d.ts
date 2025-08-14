@@ -7,11 +7,7 @@ export interface ConnectionOptions {
 }
 
 export declare class Connection {
-  constructor(
-    socket: Socket,
-    head: Buffer,
-    options: ConnectionOptions,
-  );
+  constructor(socket: Socket, head: Buffer, options: ConnectionOptions);
 
   init(): void;
 
