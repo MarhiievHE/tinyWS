@@ -1,4 +1,5 @@
 import { Maybe } from './tools/maybe';
+import { Result } from './tools/result';
 
 export interface FrameParseResult {
   frame: Frame;
@@ -7,26 +8,22 @@ export interface FrameParseResult {
 
 export declare class Frame {
   fin: boolean;
-  rsv: number;
   opcode: number;
   masked: boolean;
   payload: Buffer;
   mask: Buffer | null;
+  rsv: number;
 
   constructor(
     fin: boolean,
-    rsv: number,
     opcode: number,
     masked: boolean,
     payload: Buffer,
     mask: Buffer | null,
+    rsv: number,
   );
 
-  static from(buffer: Buffer): Frame;
-
-  static tryParse(buffer: Buffer): Maybe;
-
-  static text(message: string, fin?: boolean, encoding?: BufferEncoding): Frame;
+  static text(message: string, fin?: boolean): Frame;
 
   static binary(
     buffer: Buffer | ArrayBuffer | ArrayBufferView,
@@ -41,7 +38,7 @@ export declare class Frame {
 
   unmaskPayload(): void;
 
-  maskPayload(mask?: Buffer | null): void;
+  maskPayload(): void;
 
   toString(): string;
 
