@@ -1,5 +1,4 @@
 import { Socket } from 'node:net';
-import { IncomingMessage } from 'node:http';
 
 export interface ConnectionOptions {
   isClient?: boolean;
@@ -10,7 +9,6 @@ export interface ConnectionOptions {
 export declare class Connection {
   constructor(
     socket: Socket,
-    key: string,
     head: Buffer,
     options: ConnectionOptions,
   );
@@ -26,7 +24,6 @@ export declare class Connection {
   terminate(): void;
 
   static from(
-    req: IncomingMessage,
     socket: Socket,
     head: Buffer,
     options: ConnectionOptions,
