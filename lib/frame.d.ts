@@ -1,6 +1,3 @@
-import { Maybe } from './tools/maybe';
-import { Result } from './tools/result';
-
 export interface FrameParseResult {
   frame: Frame;
   bytesUsed: number;

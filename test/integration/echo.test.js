@@ -4,11 +4,11 @@ const assert = require('node:assert');
 const http = require('node:http');
 const WebSocket = require('ws');
 
-const { Server } = require('../../lib/server.js');
+const { WebsocketServer } = require('../../lib/server.js');
 
 test('should echo messages', async () => {
   const httpServer = http.createServer();
-  const tinyWsServer = new Server({ server: httpServer });
+  const tinyWsServer = new WebsocketServer(httpServer);
 
   tinyWsServer.on('connection', (conn) => {
     conn.on('message', (msg) => conn.send(`Echo: ${msg}`));
