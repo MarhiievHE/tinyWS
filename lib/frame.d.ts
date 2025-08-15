@@ -31,6 +31,10 @@ export declare class Frame {
 
   static pong(payload?: string | Buffer): Frame;
 
+  static emptyPingBuffer(isClient?: boolean): Buffer;
+
+  static emptyPongBuffer(isClient?: boolean): Buffer;
+
   static close(code?: number, reason?: string): Frame;
 
   unmaskPayload(): void;
