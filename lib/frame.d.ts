@@ -45,5 +45,7 @@ export declare class Frame {
 
   toBuffer(): Buffer;
 
+  get header(): Buffer;
+
   get isControlFrame(): boolean;
 }
