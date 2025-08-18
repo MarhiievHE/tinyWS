@@ -1,5 +1,5 @@
 export declare class Result<T = unknown, E = Error> {
-  constructor(params: { value?: T; error?: E });
+  private constructor(params: { value?: T; error?: E });
 
   get value(): T | undefined;
   get error(): Error;

@@ -1,3 +1,5 @@
+import { Result } from './utils/result.js';
+
 export interface FrameParseResult {
   frame: Frame;
   bytesUsed: number;
@@ -20,11 +22,12 @@ export declare class Frame {
     rsv: number,
   );
 
-  static text(message: string, fin?: boolean): Frame;
+  static text(message: string, fin?: boolean, masked?: boolean): Frame;
 
   static binary(
     buffer: Buffer | ArrayBuffer | ArrayBufferView,
     fin?: boolean,
+    masked?: boolean,
   ): Frame;
 
   static ping(payload?: string | Buffer): Frame;
@@ -35,7 +38,11 @@ export declare class Frame {
 
   static emptyPongBuffer(isClient?: boolean): Buffer;
 
-  static close(code?: number, reason?: string): Frame;
+  static close(code?: number | null, reason?: string): Frame;
+
+  static normalClose(isClient?: boolean): Buffer;
+  static errorClose(type: string, subtype?: string, isClient?: boolean): Buffer;
+  static protocolErrorClose(type: string, isClient?: boolean): Buffer;
 
   unmaskPayload(): void;
 
@@ -48,4 +55,8 @@ export declare class Frame {
   get header(): Buffer;
 
   get isControlFrame(): boolean;
+  get isValidControlFrame(): boolean;
+  get isValidDataFrame(): boolean;
+
+  getCloseDetails(): Result<{ code: number | null; reason: string }>;
 }

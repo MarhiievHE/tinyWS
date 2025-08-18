@@ -1,7 +1,8 @@
 import type { Server as HttpServer, IncomingMessage } from 'http';
 import type { Server as HttpSServer } from 'https';
-import type { EventEmitter } from 'node:events';
-import type { Connection } from './connection';
+import { EventEmitter } from 'node:events';
+
+import type { Connection } from './connection.js';
 
 export interface WebsocketServerOptions {
   pingInterval?: number;
