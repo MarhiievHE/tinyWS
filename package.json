@@ -3,6 +3,7 @@
   "version": "1.0.0-alpha.1",
   "description": "WebSocket library",
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "test": "npm run -s lint && npm run types && node --test",
     "types": "tsc -p tsconfig.json",
