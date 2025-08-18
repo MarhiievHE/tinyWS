@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const http = require('node:http');
-const WebSocket = require('ws');
+const { MockWebSocketClient } = require('../utils/wsClient.js');
 
 const { WebsocketServer } = require('../../lib/server.js');
 
@@ -17,7 +17,7 @@ test('should echo messages', async () => {
   await new Promise((resolve) => httpServer.listen(0, resolve));
   const port = httpServer.address().port;
 
-  const ws = new WebSocket(`ws://localhost:${port}`);
+  const ws = new MockWebSocketClient(`ws://localhost:${port}`);
 
   const received = await new Promise((resolve) => {
     ws.on('open', () => ws.send('Hello tinyWS'));
