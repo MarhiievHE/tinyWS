@@ -7,6 +7,7 @@ import type { Connection } from './connection.js';
 export interface WebsocketServerOptions {
   pingInterval?: number;
   maxBuffer?: number;
+  closeTimeout?: number;
 }
 
 export declare class WebsocketServer extends EventEmitter {
