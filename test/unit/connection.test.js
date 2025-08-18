@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { Connection } = require('../../lib/connection.js');
 const { Frame } = require('../../lib/frame.js');
-const { OPCODES } = require('../../lib/constants.js');
+const { OPCODES, CLOSE_TIMEOUT } = require('../../lib/constants.js');
 const { EventEmitter } = require('events');
 const { FrameParser } = require('../../lib/frameParser.js');
 
@@ -30,7 +30,7 @@ class MockSocket extends EventEmitter {
 
 test('Connection: should emit message on text frame', async () => {
   const socket = new MockSocket();
-  const conn = new Connection(socket, Buffer.alloc(0), {});
+  const conn = new Connection(socket, Buffer.alloc(0));
 
   await new Promise((resolve) => {
     conn.on('message', (msg, isBinary) => {
@@ -38,17 +38,26 @@ test('Connection: should emit message on text frame', async () => {
       assert.strictEqual(isBinary, false);
       resolve();
     });
-    socket.emit('data', Frame.text('hello').toBuffer());
+
+    conn.on('error', (err) => {
+      assert.fail(`Unexpected error: ${err.message}`);
+    });
+
+    const frame = Frame.text('hello');
+    frame.maskPayload();
+    socket.emit('data', frame.toBuffer());
   });
 
   conn.terminate();
 });
 
-test('Connection: should send pong when ping received', () => {
+test('Connection: should send pong when ping received', async () => {
   const socket = new MockSocket();
   const conn = new Connection(socket, Buffer.alloc(0), {});
 
-  socket.emit('data', Frame.ping().toBuffer());
+  const ping = Frame.ping();
+  ping.maskPayload();
+  socket.emit('data', ping.toBuffer());
 
   const lastWrite = socket.writtenData[socket.writtenData.length - 1];
   const frame = FrameParser.parse(lastWrite).value.frame;
@@ -56,7 +65,7 @@ test('Connection: should send pong when ping received', () => {
   conn.terminate();
 });
 
-test('Connection: should close on close frame', () => {
+test('Connection: should close on close frame', async () => {
   const socket = new MockSocket();
   const conn = new Connection(socket, Buffer.alloc(0), {});
 
@@ -65,6 +74,22 @@ test('Connection: should close on close frame', () => {
       assert.strictEqual(socket.ended, true);
       resolve();
     });
-    socket.emit('data', Frame.close().toBuffer());
+    const close = Frame.close();
+    close.maskPayload();
+    socket.emit('data', close.toBuffer());
+  });
+});
+
+test('Connection: sendClose triggers socket end after CLOSE_TIMEOUT', () => {
+  const sock = new MockSocket();
+  const conn = new Connection(sock, Buffer.alloc(0), { closeTimeout: 100 });
+
+  conn.sendClose(1000, 'bye');
+
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      assert.strictEqual(sock.destroyed, true);
+      resolve();
+    }, CLOSE_TIMEOUT + 100);
   });
 });

@@ -21,7 +21,7 @@ test('FrameParser: returns parse error when payload length exceeds MAX_SAFE_INTE
   const result = FrameParser.parse(buffer);
   assert.ok(result.error, 'Expected parse result to contain an error');
   assert.strictEqual(result.error.name, 'ParseError');
-  assert.strictEqual(result.error.code, PARSE_ERR_CODES.LENGTH_EXCEEDS_SAFE);
+  assert.strictEqual(result.error.code, PARSE_ERR_CODES.MESSAGE_TOO_BIG);
 });
 
 test('FrameParser: returns empty result when buffer smaller than header', () => {
