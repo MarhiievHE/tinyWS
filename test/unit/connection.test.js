@@ -5,28 +5,8 @@ const assert = require('node:assert');
 const { Connection } = require('../../lib/connection.js');
 const { Frame } = require('../../lib/frame.js');
 const { OPCODES, CLOSE_TIMEOUT } = require('../../lib/constants.js');
-const { EventEmitter } = require('events');
 const { FrameParser } = require('../../lib/frameParser.js');
-
-class MockSocket extends EventEmitter {
-  constructor() {
-    super();
-    this.writtenData = [];
-    this.ended = false;
-    this.destroyed = false;
-  }
-  write(data) {
-    this.writtenData.push(data);
-  }
-  end() {
-    this.ended = true;
-    process.nextTick(() => this.emit('close'));
-  }
-  destroy() {
-    this.destroyed = true;
-    process.nextTick(() => this.emit('close'));
-  }
-}
+const { MockSocket } = require('../utils/mockSocket.js');
 
 test('Connection: should emit message on text frame', async () => {
   const socket = new MockSocket();
