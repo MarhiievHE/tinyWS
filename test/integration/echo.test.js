@@ -1,9 +1,10 @@
 'use strict';
+
 const test = require('node:test');
 const assert = require('node:assert');
 const http = require('node:http');
-const { MockWebSocketClient } = require('../utils/wsClient.js');
 
+const { getWebSocketClient } = require('../utils/wsClient.js');
 const { WebsocketServer } = require('../../lib/server.js');
 
 test('should echo messages', async () => {
@@ -17,13 +18,13 @@ test('should echo messages', async () => {
   await new Promise((resolve) => httpServer.listen(0, resolve));
   const port = httpServer.address().port;
 
-  const ws = new MockWebSocketClient(`ws://localhost:${port}`);
+  const client = getWebSocketClient(`ws://localhost:${port}`);
 
   const received = await new Promise((resolve) => {
-    ws.on('open', () => ws.send('Hello tinyWS'));
-    ws.on('message', (msg) => {
+    client.on('open', () => client.send('Hello tinyWS'));
+    client.on('message', (msg) => {
       resolve(msg.toString());
-      ws.close();
+      client.close();
     });
   });
 

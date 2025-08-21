@@ -2,6 +2,7 @@
 
 const net = require('net');
 const crypto = require('crypto');
+const http = require('node:http');
 
 // Minimal mock WebSocket client sufficient for this integration test.
 class MockWebSocketClient {
@@ -188,6 +189,50 @@ class MockWebSocketClient {
   }
 }
 
+function wrapNativeWebSocket(wsInstance) {
+  if (!wsInstance) return wsInstance;
+  // If instance already implements the simple .on API, return as-is.
+  if (typeof wsInstance.on === 'function') return wsInstance;
+
+  return {
+    on(event, cb) {
+      if (event === 'open') wsInstance.addEventListener('open', cb);
+      else if (event === 'message')
+        wsInstance.addEventListener('message', (ev) =>
+          cb(Buffer.from(ev.data)),
+        );
+      else if (event === 'close') wsInstance.addEventListener('close', cb);
+    },
+    send(msg) {
+      wsInstance.send(msg);
+    },
+    close() {
+      wsInstance.close();
+    },
+    // keep raw instance accessible for advanced tests/debugging
+    raw: wsInstance,
+  };
+}
+
+function getWebSocketClient(url) {
+  let Native;
+  try {
+    Native = http && http.WebSocket ? http.WebSocket : undefined;
+  } catch (e) {
+    // ignore
+  }
+  if (!Native && typeof globalThis !== 'undefined' && globalThis.WebSocket)
+    Native = globalThis.WebSocket;
+
+  if (Native) {
+    const inst = new Native(url);
+    return wrapNativeWebSocket(inst);
+  }
+
+  return new MockWebSocketClient(url);
+}
+
 module.exports = {
   MockWebSocketClient,
+  getWebSocketClient,
 };
