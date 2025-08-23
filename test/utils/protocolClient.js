@@ -34,6 +34,8 @@ class ProtocolClient {
     this._fragments = null; // { opcode, chunks: Buffer[] }
 
     this.socket = net.connect({ port, host }, () => {
+      // Reduce Nagle latency for faster test handshakes/frames
+      this.socket.setNoDelay(true);
       const key = crypto.randomBytes(16).toString('base64');
       const req = [
         `GET ${u.pathname || '/'} HTTP/1.1`,
@@ -276,10 +278,13 @@ class ProtocolClient {
     method = 'GET',
     httpVersion = '1.1',
     includeHost = true,
-    timeoutMs = 1500,
+    timeoutMs = 400,
   }) {
     return new Promise((resolve) => {
       const socket = net.connect({ host, port }, () => {
+        // Lower latency and enforce a hard timeout at the socket level
+        socket.setNoDelay(true);
+        socket.setTimeout(timeoutMs, () => socket.destroy());
         const lines = [];
         lines.push(`${method} ${path} HTTP/${httpVersion}`);
         if (includeHost) lines.push(`Host: ${host}:${port}`);
@@ -290,8 +295,11 @@ class ProtocolClient {
 
       let buf = Buffer.alloc(0);
       let closed = false;
+      let done = false;
 
       const finish = () => {
+        if (done) return;
+        done = true;
         const idx = buf.indexOf('\r\n\r\n');
         const head = idx !== -1 ? buf.slice(0, idx).toString() : buf.toString();
         const [statusLine, ...headerLines] = head.split(/\r?\n/);
@@ -316,7 +324,8 @@ class ProtocolClient {
         buf = Buffer.concat([buf, chunk]);
         if (buf.indexOf('\r\n\r\n') !== -1) {
           clearTimeout(t);
-          socket.end();
+          finish();
+          socket.destroy();
         }
       });
 

@@ -33,7 +33,11 @@ test('handshake: successful upgrade', async () => {
 
   assert.strictEqual(opened, true);
 
-  client.close();
+  // Close client and wait for its socket to finish before closing the server
+  await new Promise((resolve) => {
+    client.on('close', () => resolve());
+    client.close();
+  });
 
   await new Promise((resolve) => httpServer.close(resolve));
 });
@@ -56,6 +60,7 @@ test('handshake: negative cases', async (t) => {
         'Sec-WebSocket-Version': '13',
         'Sec-WebSocket-Key': 'dGVzdC1rZXk=',
       },
+      timeoutMs: 250,
     });
 
     // Accept either an explicit non-101 response or immediate socket close without headers
@@ -84,6 +89,7 @@ test('handshake: negative cases', async (t) => {
         'Sec-WebSocket-Version': '13',
         'Sec-WebSocket-Key': 'dGVzdC1rZXk=',
       },
+      timeoutMs: 250,
     });
 
     const code = parseStatusCode(res.statusLine);
@@ -114,6 +120,7 @@ test('handshake: negative cases', async (t) => {
           'Sec-WebSocket-Version': '12',
           'Sec-WebSocket-Key': 'dGVzdC1rZXk=',
         },
+        timeoutMs: 250,
       });
 
       const code = parseStatusCode(res.statusLine);
@@ -145,6 +152,7 @@ test('handshake: negative cases', async (t) => {
           'Sec-WebSocket-Version': '13',
           'Sec-WebSocket-Key': '%%%not-base64%%%',
         },
+        timeoutMs: 250,
       });
 
       const code = parseStatusCode(res.statusLine);
@@ -177,6 +185,7 @@ test('handshake: negative cases', async (t) => {
           // base64 is valid, but lower than 16 bytes after decoding
           'Sec-WebSocket-Key': Buffer.from('short').toString('base64'),
         },
+        timeoutMs: 250,
       });
 
       const code = parseStatusCode(res.statusLine);
@@ -206,6 +215,7 @@ test('handshake: negative cases', async (t) => {
         'Sec-WebSocket-Version': '13',
         'Sec-WebSocket-Key': Buffer.from('0123456789abcdef').toString('base64'),
       },
+      timeoutMs: 250,
     });
 
     const code = parseStatusCode(res.statusLine);
@@ -237,6 +247,7 @@ test('handshake: negative cases', async (t) => {
           'Sec-WebSocket-Key':
             Buffer.from('0123456789abcdef').toString('base64'),
         },
+        timeoutMs: 250,
       });
 
       const code = parseStatusCode(res.statusLine);
@@ -270,6 +281,7 @@ test('handshake: negative cases', async (t) => {
           'Sec-WebSocket-Key':
             Buffer.from('0123456789abcdef').toString('base64'),
         },
+        timeoutMs: 250,
       });
 
       const code = parseStatusCode(res.statusLine);
@@ -300,6 +312,7 @@ test('handshake: negative cases', async (t) => {
         'Sec-WebSocket-Version': '13',
         'Sec-WebSocket-Key': Buffer.from('0123456789abcdef').toString('base64'),
       },
+      timeoutMs: 250,
     });
 
     const code = parseStatusCode(res.statusLine);
@@ -329,6 +342,7 @@ test('handshake: negative cases', async (t) => {
         'Sec-WebSocket-Version': '13',
         'Sec-WebSocket-Key': Buffer.from('0123456789abcdef').toString('base64'),
       },
+      timeoutMs: 250,
     });
 
     const code = parseStatusCode(res.statusLine);
@@ -339,4 +353,72 @@ test('handshake: negative cases', async (t) => {
 
     await new Promise((resolve) => httpServer.close(resolve));
   });
+});
+
+test('handshake: Sec-WebSocket-Accept is correct and no subprotocol by default', async () => {
+  const httpServer = http.createServer();
+  const tinyWsServer = new WebsocketServer(httpServer);
+  // Terminate immediately to avoid waiting for heartbeat timeouts
+  tinyWsServer.on('connection', (ws) => ws.terminate());
+
+  await new Promise((resolve) => httpServer.listen(0, resolve));
+  const port = httpServer.address().port;
+
+  // Do a raw handshake to inspect headers
+  const key = Buffer.from('0123456789abcdef').toString('base64');
+  const res = await ProtocolClient.attemptHandshake({
+    host: 'localhost',
+    port,
+    headers: {
+      Upgrade: 'websocket',
+      Connection: 'Upgrade',
+      'Sec-WebSocket-Version': '13',
+      'Sec-WebSocket-Key': key,
+    },
+    timeoutMs: 600,
+  });
+
+  // Compute expected accept
+  const crypto = require('node:crypto');
+  const { MAGIC } = require('../../../lib/constants.js');
+  const expected = crypto
+    .createHash('sha1')
+    .update(key)
+    .update(MAGIC)
+    .digest('base64');
+
+  const code = parseStatusCode(res.statusLine);
+  assert.strictEqual(code, 101);
+  assert.strictEqual(res.headers['sec-websocket-accept'], expected);
+  // No subprotocol unless negotiated
+  assert.strictEqual(res.headers['sec-websocket-protocol'], undefined);
+
+  await new Promise((resolve) => httpServer.close(resolve));
+});
+
+test('handshake: Connection header token matching is case-insensitive and allows multiple', async () => {
+  const httpServer = http.createServer();
+  const tinyWsServer = new WebsocketServer(httpServer);
+  // Terminate immediately to avoid waiting for heartbeat timeouts
+  tinyWsServer.on('connection', (ws) => ws.terminate());
+
+  await new Promise((resolve) => httpServer.listen(0, resolve));
+  const port = httpServer.address().port;
+
+  const res = await ProtocolClient.attemptHandshake({
+    host: 'localhost',
+    port,
+    headers: {
+      Upgrade: 'websocket',
+      // mixed case and extra tokens
+      Connection: 'keep-alive, UpGrAdE',
+      'Sec-WebSocket-Version': '13',
+      'Sec-WebSocket-Key': Buffer.from('0123456789abcdef').toString('base64'),
+    },
+    timeoutMs: 600,
+  });
+
+  const code = parseStatusCode(res.statusLine);
+  assert.strictEqual(code, 101);
+  await new Promise((resolve) => httpServer.close(resolve));
 });
