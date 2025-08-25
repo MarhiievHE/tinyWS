@@ -9,12 +9,12 @@ export interface ConnectionOptions {
 export declare class Connection {
   constructor(socket: Socket, head: Buffer, options?: ConnectionOptions);
 
-  send(data: string | Buffer): void;
-  sendText(message: string): void;
-  sendBinary(buffer: Buffer): void;
-  sendPing(payload?: Buffer | string): void;
-  sendPong(payload?: Buffer | string): void;
-  sendClose(code?: number, reason?: string): void;
+  send(data: string | Buffer): boolean;
+  sendText(message: string): boolean;
+  sendBinary(buffer: Buffer): boolean;
+  sendPing(payload?: Buffer | string): boolean;
+  sendPong(payload?: Buffer | string): boolean;
+  sendClose(code?: number, reason?: string): boolean;
   terminate(): void;
 
   on(
