@@ -114,7 +114,8 @@ class ProtocolClient {
               const full = Buffer.concat(this._fragments.chunks);
               const startOpcode = this._fragments.opcode;
               this._fragments = null;
-              if (this._frameCb) this._frameCb(startOpcode, full);
+              if (this._frameCb)
+                this._frameCb(startOpcode, full, { fin, masked });
               if (startOpcode === 0x1 && this._messageCb) this._messageCb(full);
             }
           }
@@ -127,21 +128,21 @@ class ProtocolClient {
             this._fragments = { opcode, chunks: [payload] };
             continue;
           }
-          if (this._frameCb) this._frameCb(opcode, payload);
+          if (this._frameCb) this._frameCb(opcode, payload, { fin, masked });
           if (opcode === 0x1 && this._messageCb) this._messageCb(payload);
           continue;
         }
 
         if (opcode === 0x9) {
           // PING
-          if (this._frameCb) this._frameCb(opcode, payload);
+          if (this._frameCb) this._frameCb(opcode, payload, { fin, masked });
           if (this._pingCb) this._pingCb(payload);
           continue;
         }
 
         if (opcode === 0xa) {
           // PONG
-          if (this._frameCb) this._frameCb(opcode, payload);
+          if (this._frameCb) this._frameCb(opcode, payload, { fin, masked });
           if (this._pongCb) this._pongCb(payload);
           continue;
         }
@@ -154,13 +155,13 @@ class ProtocolClient {
             code = payload.readUInt16BE(0);
             if (payload.length > 2) reason = payload.subarray(2).toString();
           }
-          if (this._frameCb) this._frameCb(opcode, payload);
+          if (this._frameCb) this._frameCb(opcode, payload, { fin, masked });
           this.socket.end();
           if (this._closeCb) this._closeCb(code, reason);
           continue;
         }
 
-        if (this._frameCb) this._frameCb(opcode, payload);
+        if (this._frameCb) this._frameCb(opcode, payload, { fin, masked });
       }
     });
 
